@@ -1,0 +1,6 @@
+pandas
+geopandas
+scikit-learn
+shapely
+numpy
+torch
