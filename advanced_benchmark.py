@@ -4,6 +4,8 @@
 # Metric: Mean F1-Score (macro)
 # =============================================================================
 
+import logging
+import sys
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -12,14 +14,23 @@ import warnings
 from scipy import stats
 
 # Scikit-learn imports
-from sklearn.model_selection import StratifiedKFold, cross_val_score
-from sklearn.preprocessing import StandardScaler, RobustScaler, MultiLabelBinarizer, LabelEncoder
-from sklearn.metrics import classification_report, f1_score, make_scorer
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_val_predict
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MultiLabelBinarizer
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
+from sklearn.metrics import classification_report, f1_score, make_scorer, confusion_matrix
+from sklearn.ensemble import (
+    RandomForestClassifier, GradientBoostingClassifier, 
+    ExtraTreesClassifier, AdaBoostClassifier
+)
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.calibration import CalibratedClassifierCV
 
 # Gradient Boosting Libraries
 import lightgbm as lgb
@@ -29,18 +40,34 @@ from catboost import CatBoostClassifier
 warnings.filterwarnings('ignore')
 
 # =============================================================================
+# 0. LOGGING CONFIGURATION
+# =============================================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.StreamHandler(sys.stdout),           
+        logging.FileHandler("benchmark_execution.log") 
+    ]
+)
+
+# =============================================================================
 # 1. LOAD DATA
 # =============================================================================
-print("=" * 80)
-print("1. LOADING DATASETS")
-print("=" * 80)
+logging.info("=" * 80)
+logging.info("1. LOADING DATASETS")
+logging.info("=" * 80)
 
 # Local paths assuming files are in the same folder
-train_df = gpd.read_file("train.geojson")
-test_df = gpd.read_file("test.geojson")
-
-print(f"Train shape: {train_df.shape}")
-print(f"Test shape:  {test_df.shape}")
+try:
+    train_df = gpd.read_file("train.geojson")
+    test_df = gpd.read_file("test.geojson")
+    logging.info(f"Train shape: {train_df.shape}")
+    logging.info(f"Test shape:  {test_df.shape}")
+except Exception as e:
+    logging.critical("Failed to load datasets. Please check file paths.", exc_info=True)
+    sys.exit(1)
 
 TARGET_MAP = {
     'Demolition': 0, 'Road': 1, 'Residential': 2,
@@ -50,9 +77,9 @@ TARGET_MAP = {
 # =============================================================================
 # 2. MASSIVE FEATURE ENGINEERING
 # =============================================================================
-print("\n" + "=" * 80)
-print("2. FEATURE ENGINEERING")
-print("=" * 80)
+logging.info("\n" + "=" * 80)
+logging.info("2. FEATURE ENGINEERING")
+logging.info("=" * 80)
 
 def extract_advanced_features(df):
     """
@@ -142,35 +169,46 @@ def extract_advanced_features(df):
 
     return feat
 
-print("Extracting features for Train...")
-train_feat = extract_advanced_features(train_df)
-print("Extracting features for Test...")
-test_feat = extract_advanced_features(test_df)
+try:
+    logging.info("Extracting features for Train...")
+    train_feat = extract_advanced_features(train_df)
+    
+    logging.info("Extracting features for Test...")
+    test_feat = extract_advanced_features(test_df)
 
-# Align columns (ensure train and test have exactly the same dummy columns)
-common_cols = sorted(set(train_feat.columns) & set(test_feat.columns))
-X_train = train_feat[common_cols].values.astype(np.float64)
-X_test = test_feat[common_cols].values.astype(np.float64)
-y_train = train_df['change_type'].map(TARGET_MAP).values
+    common_cols = sorted(set(train_feat.columns) & set(test_feat.columns))
+    X_train = train_feat[common_cols].values.astype(np.float64)
+    X_test = test_feat[common_cols].values.astype(np.float64)
+    y_train = train_df['change_type'].map(TARGET_MAP).values
 
-# Clean missing values and infinities
-X_train = np.nan_to_num(X_train, nan=0.0, posinf=1e6, neginf=-1e6)
-X_test = np.nan_to_num(X_test, nan=0.0, posinf=1e6, neginf=-1e6)
+    X_train = np.nan_to_num(X_train, nan=0.0, posinf=1e6, neginf=-1e6)
+    X_test = np.nan_to_num(X_test, nan=0.0, posinf=1e6, neginf=-1e6)
 
-# Precompute scaled versions for linear models / NNs
-scaler = StandardScaler()
-X_train_sc = scaler.fit_transform(X_train)
-X_test_sc = scaler.transform(X_test)
+    scaler = StandardScaler()
+    X_train_sc = scaler.fit_transform(X_train)
+    X_test_sc = scaler.transform(X_test)
 
-print(f"\nFinal X_train shape: {X_train.shape}")
-print(f"Final X_test shape:  {X_test.shape}")
+    logging.info(f"Final X_train shape: {X_train.shape}")
+    
+    # Calculate custom aggressive class weights to save minority classes
+    from sklearn.utils.class_weight import compute_class_weight
+    classes = np.unique(y_train)
+    weights = compute_class_weight('balanced', classes=classes, y=y_train)
+    custom_weights = {c: w for c, w in zip(classes, weights)}
+    custom_weights[4] *= 2.0  # Industrial
+    custom_weights[5] *= 10.0 # Mega Projects
+    logging.info("Computed custom class weights to handle severe class imbalance.")
+
+except Exception as e:
+    logging.error("Error occurred during Feature Engineering phase.", exc_info=True)
+    sys.exit(1)
 
 # =============================================================================
 # 3. MODEL BENCHMARKING
 # =============================================================================
-print("\n" + "=" * 80)
-print("3. RUNNING MODEL BENCHMARK")
-print("=" * 80)
+logging.info("\n" + "=" * 80)
+logging.info("3. RUNNING MODEL BENCHMARK")
+logging.info("=" * 80)
 
 f1_macro = make_scorer(f1_score, average='macro')
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -178,13 +216,14 @@ skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 # Dictionary of models to test (reduced slightly for realistic execution time)
 models_to_test = {
     'LightGBM': (lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8, 
-                                    class_weight='balanced', random_state=42, verbose=-1, n_jobs=-1), X_train),
+                                    min_child_samples=3, class_weight=custom_weights, 
+                                    random_state=42, verbose=-1, n_jobs=-1), X_train),
     
     # 'XGBoost': (xgb.XGBClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8, 
     #                               random_state=42, eval_metric='mlogloss', n_jobs=-1), X_train),
     
-    # 'CatBoost': (CatBoostClassifier(iterations=1000, learning_rate=0.05, depth=8, 
-    #                                 random_seed=42, verbose=0, auto_class_weights='Balanced'), X_train),
+    # 'CatBoost': (CatBoostClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8, 
+    #                               min_child_weight=1, random_state=42, eval_metric='mlogloss', n_jobs=-1), X_train),
     
     # 'RandomForest': (RandomForestClassifier(n_estimators=500, random_state=42, class_weight='balanced', n_jobs=-1), X_train),
     
@@ -198,7 +237,7 @@ oof_predictions = {}
 test_predictions = {}
 
 for name, (model, data) in models_to_test.items():
-    print(f"Training {name}...")
+    logging.info(f"Initiating training for: {name}")
     t0 = time.time()
     
     oof_proba = np.zeros((len(y_train), 6))
@@ -210,7 +249,13 @@ for name, (model, data) in models_to_test.items():
             from copy import deepcopy
             fold_model = deepcopy(model)
             fold_model.fit(data[tr_idx], y_train[tr_idx])
-            
+
+            if name == 'XGBoost':
+                sample_weights = np.array([custom_weights[y] for y in y_train[tr_idx]])
+                model.fit(data[tr_idx], y_train[tr_idx], sample_weight=sample_weights)
+            else:
+                model.fit(data[tr_idx], y_train[tr_idx])
+
             if hasattr(fold_model, 'predict_proba'):
                 oof_proba[val_idx] = fold_model.predict_proba(data[val_idx])
                 test_proba += fold_model.predict_proba(X_test_sc if data is X_train_sc else X_test) / 5.0
@@ -219,56 +264,53 @@ for name, (model, data) in models_to_test.items():
         oof_pred = np.argmax(oof_proba, axis=1)
         score = f1_score(y_train, oof_pred, average='macro')
 
-        print(f"\n--- Detailed Classification Report for {name} ---")
+        logging.info(f"SUCCESS: {name} | OOF F1-Score (Macro) = {score:.4f} | Total Time: {elapsed:.1f}s")
+
+        
         target_names = [k for k, v in sorted(TARGET_MAP.items(), key=lambda item: item[1])]
         report = classification_report(y_train, oof_pred, target_names=target_names)
-        print(report)
-        print("-" * 60)
+        logging.info(f"\n--- Detailed Classification Report for {name} ---\n{report}\n{'-'*60}")
         
         results[name] = score
         oof_predictions[name] = oof_proba
         test_predictions[name] = test_proba
         
-        print(f"  -> {name} | OOF F1-Score = {score:.4f} | Time: {elapsed:.1f}s")
     except Exception as e:
-        print(f"  -> {name} | FAILED: {str(e)[:60]}")
+        logging.error(f"FAILED to train {name} due to an unexpected error.", exc_info=True)
 
 # =============================================================================
-# 4. ENSEMBLING (STACKING)
+# 4. ENSEMBLING (STACKING) & SUBMISSION
 # =============================================================================
-print("\n" + "=" * 80)
-print("4. BUILDING THE ENSEMBLE (STACKING)")
-print("=" * 80)
+logging.info("\n" + "=" * 80)
+logging.info("4. BUILDING THE ENSEMBLE & GENERATING SUBMISSION")
+logging.info("=" * 80)
 
-# Create Meta-features from OOF predictions
-model_names = list(oof_predictions.keys())
-meta_X_train = np.hstack([oof_predictions[n] for n in model_names])
-meta_X_test = np.hstack([test_predictions[n] for n in model_names])
+try:
+    if oof_predictions:
+        # Create Meta-features from OOF predictions
+        model_names = list(oof_predictions.keys())
+        meta_X_train = np.hstack([oof_predictions[n] for n in model_names])
+        meta_X_test = np.hstack([test_predictions[n] for n in model_names])
+        # Meta-learner: Logistic Regression
+        meta_model = LogisticRegression(max_iter=2000, random_state=42, class_weight='balanced')
+        meta_scores = cross_val_score(meta_model, meta_X_train, y_train, cv=skf, scoring=f1_macro)
 
-# Meta-learner: Logistic Regression
-meta_model = LogisticRegression(max_iter=2000, random_state=42, class_weight='balanced')
-meta_scores = cross_val_score(meta_model, meta_X_train, y_train, cv=skf, scoring=f1_macro)
+        logging.info(f"Meta-Learner (Stacking) | F1-Score = {meta_scores.mean():.4f}")
+        # Train final meta-model and predict
+        meta_model.fit(meta_X_train, y_train)
+        final_test_preds = meta_model.predict(meta_X_test)
+        # The correct ID column based on Kaggle data sample provided
+        test_ids = test_df['index'].values
+        submission = pd.DataFrame({
+            'Id': test_ids,
+            'change_type': final_test_preds.astype(int)
+        })
 
-print(f"Meta-Learner (Stacking) | F1-Score = {meta_scores.mean():.4f}")
+        submission.to_csv('stacked_ensemble_submission.csv', index=False)
+        logging.info("✅ Success! 'stacked_ensemble_submission.csv' is ready for Kaggle.")
+    else:
+        logging.warning("No models successfully trained. Skipping Ensemble and Submission.")
+except Exception as e:
+    logging.error("Failed during the Ensembling or CSV export phase.", exc_info=True)
 
-# Train final meta-model and predict
-meta_model.fit(meta_X_train, y_train)
-final_test_preds = meta_model.predict(meta_X_test)
-
-# =============================================================================
-# 5. KAGGLE SUBMISSION
-# =============================================================================
-print("\n" + "=" * 80)
-print("5. GENERATING SUBMISSION")
-print("=" * 80)
-
-# The correct ID column based on Kaggle data sample provided
-test_ids = test_df['index'].values
-
-submission = pd.DataFrame({
-    'Id': test_ids,
-    'change_type': final_test_preds.astype(int)
-})
-
-submission.to_csv('stacked_ensemble_submission.csv', index=False)
-print("✅ Success! 'stacked_ensemble_submission.csv' is ready for Kaggle.")
+logging.info("Benchmark execution finished. Check 'benchmark_execution.log' for details.")
