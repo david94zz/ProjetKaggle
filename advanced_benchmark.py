@@ -14,6 +14,7 @@ import warnings
 from scipy import stats
 from copy import deepcopy
 import random
+import os
 
 # Scikit-learn imports
 from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_val_predict
@@ -63,14 +64,33 @@ logging.info("=" * 80)
 logging.info("1. LOADING DATASETS")
 logging.info("=" * 80)
 
+COMP_ID = "2-el-1730-machine-learning-project-2026"
+
+def find_data_path(root_dir):
+    for root, dirs, files in os.walk(root_dir):
+        if "train.geojson" in files:
+            return root
+    return None
+
+if os.path.exists('/kaggle/input'):
+    DATA_DIR = find_data_path('/kaggle/input')
+else:
+    DATA_DIR = "./data"
+
+if DATA_DIR is None:
+    logging.critical("Impossible to locate the dataset. Please ensure 'train.geojson' and 'test.geojson' are in the correct directory.")
+    sys.exit(1)
+
+
+logging.info(f"Files inside: {DATA_DIR}")
 # Local paths assuming files are in the same folder
 try:
-    train_df = gpd.read_file("train.geojson")
-    test_df = gpd.read_file("test.geojson")
+    train_df = gpd.read_file(os.path.join(DATA_DIR, "train.geojson"))
+    test_df = gpd.read_file(os.path.join(DATA_DIR, "test.geojson"))
     logging.info(f"Train shape: {train_df.shape}")
     logging.info(f"Test shape:  {test_df.shape}")
 except Exception as e:
-    logging.critical("Failed to load datasets. Please check file paths.", exc_info=True)
+    logging.critical("Failed to load datasets.", exc_info=True)
     sys.exit(1)
 
 TARGET_MAP = {
@@ -320,41 +340,45 @@ logging.info("3. RUNNING MODEL BENCHMARK")
 logging.info("=" * 80)
 
 f1_macro = make_scorer(f1_score, average='macro')
-skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
 
 # Dictionary of models to test (reduced slightly for realistic execution time)
 models_to_test = {
-    # --- LIGHTGBM (Usually best performing and fastest) ---
-    'LightGBM': (lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.03, max_depth=10, 
-                                    min_child_samples=3, class_weight=custom_weights, 
-                                    random_state=RANDOM_STATE, verbose=-1, n_jobs=2), X_train_raw),
-    # # --- K-NEAREST NEIGHBORS ---
-    # 'KNN_7': (KNeighborsClassifier(n_neighbors=7, weights='distance', n_jobs=2), X_train_pca),
+    # --- LIGHTGBM ---
+    'LightGBM': (lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.03,num_leaves=63,device='gpu',gpu_use_dp=False,
+                                     min_child_samples=3, class_weight=custom_weights, 
+                                    random_state=RANDOM_STATE, verbose=-1, n_jobs=-1), X_train_raw),
 
-    # --- RANDOM FOREST ---
-    'RandomForest': (RandomForestClassifier(n_estimators=300, max_depth=15, min_samples_split=5, min_samples_leaf=10, random_state=RANDOM_STATE, class_weight='balanced', n_jobs=2), X_train_pca)
-
-    
-    
     # --- XGBOOST ---
-    # 'XGBoost': (xgb.XGBClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8, 
-    #                               random_state=RANDOM_STATE, eval_metric='mlogloss', n_jobs=-1), X_train_raw),
+    'XGBoost': (xgb.XGBClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8,device='cuda',tree_method='hist',
+                                  random_state=RANDOM_STATE, n_jobs=-1), X_train_raw),
     
     # --- CATBOOST ---
-    # 'CatBoost': (CatBoostClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8, 
-    #                               min_child_weight=1, random_state=RANDOM_STATE, eval_metric='mlogloss', n_jobs=-1), X_train_raw),
+    'CatBoost': (CatBoostClassifier(n_estimators=1000, learning_rate=0.05, depth=8, task_type='GPU', class_weights=custom_weights,
+                                  verbose=False, random_state=RANDOM_STATE), X_train_raw),
+    
+    
+
+    # --- RANDOM FOREST ---
+    'RandomForest': (RandomForestClassifier(n_estimators=100, max_depth=15, random_state=RANDOM_STATE, class_weight='balanced', n_jobs=-1), X_train_raw)
+
+    
+    # # --- K-NEAREST NEIGHBORS ---
+    # 'KNN_Weighted': (KNeighborsClassifier(n_neighbors=11, weights='distance', n_jobs=-1), X_train_pca)
     
     
     
-    # --- LOGISTIC REGRESSION ---
+    
+    
+    # # --- LOGISTIC REGRESSION ---
     # 'LogisticRegression': (LogisticRegression(max_iter=2000, class_weight='balanced', random_state=RANDOM_STATE), X_train_sc),
     
-    # --- NEURAL NETWORK (MLP) ---
+    # # --- NEURAL NETWORK (MLP) ---
     # 'MLP_NeuralNet': (MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=500, random_state=RANDOM_STATE), X_train_sc),
 
     
 
-    # --- PCA VARIANT ---
+    # # --- PCA VARIANT ---
     # 'LGBM_PCA': (lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.05, verbose=-1, class_weight='balanced'), X_train_pca)
 }
 
