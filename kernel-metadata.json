@@ -1,0 +1,15 @@
+{
+  "id": "davidnpda/competion-ml-2026-benchmark",
+  "title": "Competion ML 2026 Benchmark",
+  "code_file": "advanced_benchmark.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": ["2-el-1730-machine-learning-project-2026"],
+  "kernel_sources": [],
+  "model_sources": []
+}

@@ -1,6 +1,17 @@
+# Bibliothèques de base
 pandas
-geopandas
-scikit-learn
-shapely
 numpy
-torch
+geopandas
+shapely
+scipy
+
+# Machine Learning & Prétraitement
+scikit-learn
+
+# Algorithmes de Gradient Boosting
+lightgbm
+xgboost
+catboost
+
+# Visualisation (Optionnel mais souvent utile avec ces libs)
+matplotlib

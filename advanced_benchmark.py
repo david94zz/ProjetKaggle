@@ -55,7 +55,7 @@ logging.basicConfig(
     ]
 )
 
-RANDOM_STATE = 50
+RANDOM_STATE = 42
 
 # =============================================================================
 # 1. LOAD DATA
@@ -108,6 +108,78 @@ logging.info("2. FEATURE ENGINEERING")
 logging.info("Motivation: Exploit ALL available information in the dataset.")
 logging.info("=" * 80)
 
+def process_chronological_features(df):
+    """
+    Extracts the true temporal dynamics by dynamically sorting
+    the dates (and associated colors) for each row.
+    """
+    
+    for i in range(5):
+        if f'date{i}' in df.columns:
+            df[f'date{i}'] = pd.to_datetime(df[f'date{i}'], format="%d-%m-%Y", errors="coerce")
+
+    
+    def extract_row_dynamics(row):
+        
+        dates_with_idx = []
+        for i in range(5):
+            date_val = row.get(f'date{i}')
+            if pd.notnull(date_val):
+                dates_with_idx.append((date_val, i))
+        
+        
+        if len(dates_with_idx) < 2:
+            return pd.Series(dtype=float)
+
+        
+        dates_with_idx.sort(key=lambda x: x[0])
+        
+        
+        
+        result = {}
+        
+        
+        first_date, first_idx = dates_with_idx[0]
+        last_date, last_idx = dates_with_idx[-1]
+        result['total_duration'] = (last_date - first_date).days
+        
+        
+        for color in ['red', 'green', 'blue']:
+            c_first = row.get(f'img_{color}_mean_date{int(first_idx)}')
+            c_last = row.get(f'img_{color}_mean_date{int(last_idx)}')
+            if pd.notnull(c_first) and pd.notnull(c_last):
+                result[f'{color}_mean_diff_total'] = c_last - c_first
+        
+        
+        for step in range(len(dates_with_idx) - 1):
+            d_now, idx_now = dates_with_idx[step]
+            d_next, idx_next = dates_with_idx[step + 1]
+            
+            
+            if pd.notnull(d_next) and pd.notnull(d_now):
+                result[f'delta_days_step{step}'] = (d_next - d_now).days
+            else:
+                result[f'delta_days_step{step}'] = np.nan
+            
+            
+            for color in ['red', 'green', 'blue']:
+                c_now = row.get(f'img_{color}_mean_date{int(idx_now)}')
+                c_next = row.get(f'img_{color}_mean_date{int(idx_next)}')
+                if pd.notnull(c_now) and pd.notnull(c_next):
+                    result[f'd_{color}_step{step}'] = c_next - c_now
+                    result[f'absd_{color}_step{step}'] = abs(c_next - c_now)
+                    
+        return pd.Series(result)
+
+    
+    logging.info("Chronological dynamics extraction (this may takes 2-3 min :( ))...")
+    chrono_features = df.apply(extract_row_dynamics, axis=1)
+    
+    
+
+    
+    return chrono_features
+
 def extract_advanced_features(df, fit_encoders=None):
     """
     Extracts an exhaustive list of features from images, geometry, and temporal data.
@@ -120,15 +192,15 @@ def extract_advanced_features(df, fit_encoders=None):
     is_train = fit_encoders is None
 
 
-    # --- GROUP A: RAW IMAGE FEATURES ---
-    # Motivation: RGB mean and std are direct visual appearance indicators
+    # # --- GROUP A: RAW IMAGE FEATURES ---
+    # # Motivation: RGB mean and std are direct visual appearance indicators
 
-    for i in range(1, 6):
-        for color in ['red', 'green', 'blue']:
-            for stat in ['mean', 'std']:
-                col = f'img_{color}_{stat}_date{i}'
-                if col in df.columns:
-                    feat[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    # for i in range(1, 6):
+    #     for color in ['red', 'green', 'blue']:
+    #         for stat in ['mean', 'std']:
+    #             col = f'img_{color}_{stat}_date{i}'
+    #             if col in df.columns:
+    #                 feat[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     
     # --- GROUP B: DERIVED COLOR FEATURES ---
     # Motivation: Color indices (ratios, saturation, NDVI-like) capture physical properties
@@ -158,29 +230,17 @@ def extract_advanced_features(df, fit_encoders=None):
         if rs in feat.columns:
             feat[f'mean_std_d{i}'] = (feat[rs] + feat[gs] + feat[bs]) / 3.0
     
-    # --- GROUP C: TEMPORAL FEATURES (CHANGES BETWEEN DATES) ---
-    # Motivation: Change over time is crucial to distinguish demolition vs road vs residential
-    for color in ['red', 'green', 'blue']:
-        for i in range(1, 5):
-            c1, c2 = f'img_{color}_mean_date{i}', f'img_{color}_mean_date{i+1}'
-            if c1 in feat.columns and c2 in feat.columns:
-                feat[f'd_{color}_{i}_{i+1}'] = feat[c2] - feat[c1]
-                feat[f'absd_{color}_{i}_{i+1}'] = np.abs(feat[c2] - feat[c1])
+    
+    # # --- GROUP C: GLOBAL STATISTICS OVER 5 DATES ---
+    # for color in ['red', 'green', 'blue']:
+    #     cols = [f'img_{color}_mean_date{i}' for i in range(1, 6) if f'img_{color}_mean_date{i}' in feat.columns]
+    #     if cols:
+    #         feat[f'{color}_mean_all'] = feat[cols].mean(axis=1)
+    #         feat[f'{color}_std_all'] = feat[cols].std(axis=1)
+    #         feat[f'{color}_max_all'] = feat[cols].max(axis=1)
+    #         feat[f'{color}_min_all'] = feat[cols].min(axis=1)
 
-        c1, c5 = f'img_{color}_mean_date1', f'img_{color}_mean_date5'
-        if c1 in feat.columns and c5 in feat.columns:
-            feat[f'total_d_{color}'] = feat[c5] - feat[c1]
-
-    # --- GROUP D: GLOBAL STATISTICS OVER 5 DATES ---
-    for color in ['red', 'green', 'blue']:
-        cols = [f'img_{color}_mean_date{i}' for i in range(1, 6) if f'img_{color}_mean_date{i}' in feat.columns]
-        if cols:
-            feat[f'{color}_mean_all'] = feat[cols].mean(axis=1)
-            feat[f'{color}_std_all'] = feat[cols].std(axis=1)
-            feat[f'{color}_max_all'] = feat[cols].max(axis=1)
-            feat[f'{color}_min_all'] = feat[cols].min(axis=1)
-
-    # --- GROUP E: POLYGON GEOMETRY ---
+    # --- GROUP D: POLYGON GEOMETRY ---
     # Motivation: Shape and size are key (roads are long/thin, mega projects are huge)
     if 'geometry' in df.columns and df.geometry is not None:
         geom = df.geometry.to_crs(epsg=3857) # Metric projection
@@ -189,8 +249,8 @@ def extract_advanced_features(df, fit_encoders=None):
         feat['compactness'] = 4 * np.pi * feat['area'] / (feat['perimeter']**2 + 1e-8)
         feat['bbox_area'] = geom.envelope.area
         feat['extent_ratio'] = feat['area'] / (feat['bbox_area'] + 1e-8)
-        feat['centroid_x'] = geom.centroid.x
-        feat['centroid_y'] = geom.centroid.y
+        # feat['centroid_x'] = geom.centroid.x
+        # feat['centroid_y'] = geom.centroid.y
         
         bounds = geom.bounds
         feat['bbox_w'] = bounds['maxx'].values - bounds['minx'].values
@@ -198,7 +258,7 @@ def extract_advanced_features(df, fit_encoders=None):
         feat['aspect_ratio'] = feat['bbox_w'] / (feat['bbox_h'] + 1e-8)
 
 
-    # --- GROUP G: CHANGE STATUS ---
+    # --- GROUP E: CHANGE STATUS ---
     status_cols = [f'change_status_date{i}' for i in range(1, 6)]
     existing_status = [c for c in status_cols if c in df.columns]
 
@@ -222,10 +282,10 @@ def extract_advanced_features(df, fit_encoders=None):
 
     
 
-    # --- GROUP H & I: URBAN AND GEOGRAPHY TYPES ---
+    # --- GROUP F & G: URBAN AND GEOGRAPHY TYPES ---
 
-    if 'urban_types' in df.columns:
-        urban_split = df['urban_types'].fillna('').astype(str).apply(
+    if 'urban_type' in df.columns:
+        urban_split = df['urban_type'].fillna('').astype(str).apply(
             lambda x: [s.strip().lower() for s in x.split(',') if s.strip()]
         )
         if is_train:
@@ -250,29 +310,16 @@ def extract_advanced_features(df, fit_encoders=None):
         g_df = pd.DataFrame(mlb_g.transform(geo_split), columns=[f'geo_{c}' for c in mlb_g.classes_], index=feat.index)
         feat = pd.concat([feat, g_df], axis=1)
 
-    # --- GROUP J: TEMPORAL DATES (DURATIONS) ---
-    date_cols = [f'date{i}' for i in range(1, 6) if f'date{i}' in df.columns]
-    
-    if date_cols:
-        for c in date_cols:
-            df[c] = pd.to_datetime(df[c], errors="coerce", format="%d-%m-%Y")
-        
-        # Calculate deltas between consecutive dates
-        for i in range(1, 5):
-            d1, d2 = f'date{i}', f'date{i+1}'
-            if d1 in df.columns and d2 in df.columns:
-                feat[f'delta_{i}_{i+1}'] = (df[d2] - df[d1]).dt.days
-        
-        # whole duration for project
-    
-        if 'date1' in df.columns and 'date5' in df.columns:
-            feat['total_duration'] = (df['date5'] - df['date1']).dt.days
+    # --- GROUP H: TEMPORAL FEATURES (CHANGES BETWEEN DATES)---
+    # Motivation: Change over time is crucial to distinguish demolition vs road vs residential
+    chrono_feat = process_chronological_features(df)
+    feat = pd.concat([feat, chrono_feat], axis=1)
 
-
-    # --- GROUP K: CROSS INTERACTIONS ---
+    # --- GROUP I: CROSS INTERACTIONS ---
     if 'area' in feat.columns and 'n_status_changes' in feat.columns:
         feat['area_x_changes'] = feat['area'] * feat['n_status_changes']
 
+    
     if is_train:
         return feat, encoders
     
@@ -296,23 +343,33 @@ try:
     train_feat.replace([np.inf, -np.inf], np.nan, inplace=True)
     test_feat.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    train_mean = train_feat.mean()
+    train_mean = train_feat.mean(numeric_only=True)
 
     train_feat.fillna(train_mean, inplace=True)
     test_feat.fillna(train_mean, inplace=True)
 
-    # Numpy conversion and cleaning
-    X_train_raw = train_feat.values.astype(np.float64)
-    X_test_raw = test_feat.values.astype(np.float64)
+    # Prepare final datasets
+    # For models that can handle raw features, we keep them as is. For others, we will create scaled and PCA versions.
+    cat_cols = [c for c in train_feat.columns if '_enc' in c]
+
+    for col in cat_cols:
+        train_feat[col] = train_feat[col].astype(int).astype('category')
+        test_feat[col] = test_feat[col].astype(int).astype('category')
+
+    X_train_raw = train_feat.copy()
+    X_test_raw = test_feat.copy()
     y_train = train_df['change_type'].map(TARGET_MAP).values
 
+    numeric_cols = [c for c in X_train_raw.columns if c not in cat_cols]
     scaler = StandardScaler()
-    X_train_sc = scaler.fit_transform(X_train_raw)
-    X_test_sc = scaler.transform(X_test_raw)
+    X_train_sc = X_train_raw.copy()
+    X_test_sc = X_test_raw.copy()
+    X_train_sc[numeric_cols] = scaler.fit_transform(X_train_raw[numeric_cols])
+    X_test_sc[numeric_cols] = scaler.transform(X_test_raw[numeric_cols])
 
-    logging.info(f"Final X_train shape: {X_train_raw.shape}")
+    logging.info(f"Final X_train shape: {X_train_raw.shape} ({len(cat_cols)}  categorical, {len(numeric_cols)} numeric)")
 
-    #PCA for dimensionality reduction (optional, can be commented out if not desired)
+    #PCA for dimensionality reduction
     logging.info("Running PCA Dimensionality Reduction...")
     pca = PCA(n_components=0.95, random_state=RANDOM_STATE)
     X_train_pca = pca.fit_transform(X_train_sc)
@@ -342,7 +399,7 @@ logging.info("=" * 80)
 f1_macro = make_scorer(f1_score, average='macro')
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
 
-# Dictionary of models to test (reduced slightly for realistic execution time)
+# Dictionary of models to test with their corresponding training data (raw, scaled, or PCA)
 models_to_test = {
     # --- LIGHTGBM ---
     'LightGBM': (lgb.LGBMClassifier(n_estimators=1000, learning_rate=0.03,num_leaves=63,device='gpu',gpu_use_dp=False,
@@ -351,16 +408,16 @@ models_to_test = {
 
     # --- XGBOOST ---
     'XGBoost': (xgb.XGBClassifier(n_estimators=1000, learning_rate=0.05, max_depth=8,device='cuda',tree_method='hist',
-                                  random_state=RANDOM_STATE, n_jobs=-1), X_train_raw),
+                                  enable_categorical=True,random_state=RANDOM_STATE, n_jobs=-1), X_train_raw),
     
     # --- CATBOOST ---
-    'CatBoost': (CatBoostClassifier(n_estimators=1000, learning_rate=0.05, depth=8, task_type='GPU', class_weights=custom_weights,
-                                  verbose=False, random_state=RANDOM_STATE), X_train_raw),
+    'CatBoost': (CatBoostClassifier(n_estimators=1000, learning_rate=0.05, depth=8, task_type='GPU', class_weights=list(custom_weights.values()),
+                                  verbose=False,cat_features=cat_cols, random_state=RANDOM_STATE), X_train_raw),
     
     
 
     # --- RANDOM FOREST ---
-    'RandomForest': (RandomForestClassifier(n_estimators=100, max_depth=15, random_state=RANDOM_STATE, class_weight='balanced', n_jobs=-1), X_train_raw)
+    'RandomForest': (RandomForestClassifier(n_estimators=100, max_depth=None, random_state=RANDOM_STATE, class_weight='balanced_subsample', n_jobs=-1), X_train_raw)
 
     
     # # --- K-NEAREST NEIGHBORS ---
@@ -406,19 +463,31 @@ for name, (model, data) in models_to_test.items():
         for tr_idx, val_idx in skf.split(data, y_train):
             from copy import deepcopy
             fold_model = deepcopy(model)
-            fold_model.fit(data[tr_idx], y_train[tr_idx])
+            
+
+            X_tr, y_tr = data.iloc[tr_idx].copy(), y_train[tr_idx]
+            X_va = data.iloc[val_idx].copy()
+            X_test_curr = X_te.copy()
+
+            if name == 'RandomForest':
+                for col in cat_cols:
+                    X_tr[col] = X_tr[col].astype(float)
+                    X_va[col] = X_va[col].astype(float)
+                    X_test_curr[col] = X_test_curr[col].astype(float)
+
+            fold_model.fit(X_tr, y_tr)
 
 
             if hasattr(fold_model, 'predict_proba'):
-                oof_proba[val_idx] = fold_model.predict_proba(data[val_idx])
-                test_proba += fold_model.predict_proba(X_te) / 5.0
+                oof_proba[val_idx] = fold_model.predict_proba(X_va)
+                test_proba += fold_model.predict_proba(X_test_curr) / 5.0
             else:
                 # Fallback for models without predict_proba (like some SVC configs)
-                preds = fold_model.predict(data[val_idx])
+                preds = fold_model.predict(X_va)
                 for idx, p in zip(val_idx, preds):
                     oof_proba[idx, p] = 1.0
                 
-                t_preds = fold_model.predict(X_te)
+                t_preds = fold_model.predict(X_test_curr)
                 for idx, p in enumerate(t_preds):
                     test_proba[idx, p] += 1.0 / 5.0
             

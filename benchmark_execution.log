@@ -1,330 +1,122 @@
-2026-02-14 15:34:12 - INFO - ================================================================================
-2026-02-14 15:34:12 - INFO - 1. LOADING DATASETS
-2026-02-14 15:34:12 - INFO - ================================================================================
-2026-02-14 15:36:31 - INFO - Train shape: (296146, 45)
-2026-02-14 15:36:31 - INFO - Test shape:  (120526, 44)
-2026-02-14 15:36:31 - INFO - 
+2026-02-15 14:32:25 - INFO - ================================================================================
+2026-02-15 14:32:25 - INFO - 1. LOADING DATASETS
+2026-02-15 14:32:25 - INFO - ================================================================================
+2026-02-15 14:32:25 - INFO - Files inside: /kaggle/input/competitions/2-el-1730-machine-learning-project-2026
+2026-02-15 14:33:19 - INFO - Train shape: (296146, 45)
+2026-02-15 14:33:19 - INFO - Test shape:  (120526, 44)
+2026-02-15 14:33:19 - INFO - 
 ================================================================================
-2026-02-14 15:36:31 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 15:36:31 - INFO - ================================================================================
-2026-02-14 15:36:31 - INFO - Extracting features for Train...
-2026-02-14 15:37:05 - INFO - Extracting features for Test...
-2026-02-14 15:37:21 - INFO - Final X_train shape: (296146, 68)
-2026-02-14 15:37:21 - INFO - Computed custom class weights to handle severe class imbalance.
-2026-02-14 15:37:21 - INFO - 
+2026-02-15 14:33:19 - INFO - 2. FEATURE ENGINEERING
+2026-02-15 14:33:19 - INFO - Motivation: Exploit ALL available information in the dataset.
+2026-02-15 14:33:19 - INFO - ================================================================================
+2026-02-15 14:33:19 - INFO - Extracting features for Train...
+2026-02-15 14:33:32 - INFO - Chronological dynamics extraction (this may takes 2-3 min :( ))...
+2026-02-15 14:35:42 - INFO - Created 67 features for Train.
+2026-02-15 14:35:42 - INFO - Extracting features for Test...
+2026-02-15 14:35:46 - INFO - Chronological dynamics extraction (this may takes 2-3 min :( ))...
+2026-02-15 14:36:38 - INFO - Cleaning inf/nan values using training means...
+2026-02-15 14:36:39 - INFO - Final X_train shape: (296146, 67) (4  categorical, 63 numeric)
+2026-02-15 14:36:39 - INFO - Running PCA Dimensionality Reduction...
+2026-02-15 14:36:40 - INFO - PCA retained 37 components for 95% variance.
+2026-02-15 14:36:40 - INFO - Computed custom class weights to handle severe class imbalance.
+2026-02-15 14:36:40 - INFO - 
 ================================================================================
-2026-02-14 15:37:21 - INFO - 3. RUNNING MODEL BENCHMARK
-2026-02-14 15:37:21 - INFO - ================================================================================
-2026-02-14 15:37:21 - INFO - Initiating training for: LightGBM
-2026-02-14 15:57:36 - INFO - SUCCESS: LightGBM | OOF F1-Score (Macro) = 0.4312 | Total Time: 1215.6s
-2026-02-14 15:57:37 - INFO - 
+2026-02-15 14:36:40 - INFO - 3. RUNNING MODEL BENCHMARK
+2026-02-15 14:36:40 - INFO - ================================================================================
+2026-02-15 14:36:40 - INFO - Initiating training for: LightGBM
+2026-02-15 14:49:46 - INFO - SUCCESS: LightGBM | OOF F1-Score (Macro) = 0.5235 | Total Time: 786.5s
+2026-02-15 14:49:46 - INFO - 
 --- Detailed Classification Report for LightGBM ---
                precision    recall  f1-score   support
 
-   Demolition       0.42      0.71      0.53     31509
-         Road       0.50      0.82      0.62     14305
-  Residential       0.78      0.68      0.73    148435
-   Commercial       0.62      0.55      0.58    100422
-   Industrial       0.11      0.16      0.13      1324
+   Demolition       0.70      0.88      0.78     31509
+         Road       0.62      0.85      0.71     14305
+  Residential       0.83      0.73      0.78    148435
+   Commercial       0.67      0.69      0.68    100422
+   Industrial       0.17      0.21      0.19      1324
 Mega Projects       0.00      0.00      0.00       151
 
-     accuracy                           0.64    296146
-    macro avg       0.41      0.49      0.43    296146
- weighted avg       0.67      0.64      0.65    296146
+     accuracy                           0.74    296146
+    macro avg       0.50      0.56      0.52    296146
+ weighted avg       0.75      0.74      0.74    296146
 
 ------------------------------------------------------------
-2026-02-14 15:57:37 - INFO - 
-================================================================================
-2026-02-14 15:57:37 - INFO - 4. BUILDING THE ENSEMBLE & GENERATING SUBMISSION
-2026-02-14 15:57:37 - INFO - ================================================================================
-2026-02-14 15:58:00 - INFO - Meta-Learner (Stacking) | F1-Score = 0.4154
-2026-02-14 15:58:09 - INFO - Benchmark execution finished. Check 'benchmark_execution.log' for details.
-2026-02-14 16:38:05 - INFO - ================================================================================
-2026-02-14 16:38:05 - INFO - 1. LOADING DATASETS
-2026-02-14 16:38:05 - INFO - ================================================================================
-2026-02-14 16:40:14 - INFO - Train shape: (296146, 45)
-2026-02-14 16:40:14 - INFO - Test shape:  (120526, 44)
-2026-02-14 16:40:14 - INFO - 
-================================================================================
-2026-02-14 16:40:14 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 16:40:14 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 16:40:14 - INFO - ================================================================================
-2026-02-14 16:40:14 - INFO - Extracting features for Train...
-2026-02-14 16:40:18 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 245, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 187, in extract_advanced_features
-    le_s.fit(sorted(all_vals))
-             ^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 16:48:35 - INFO - ================================================================================
-2026-02-14 16:48:35 - INFO - 1. LOADING DATASETS
-2026-02-14 16:48:35 - INFO - ================================================================================
-2026-02-14 16:50:48 - INFO - Train shape: (296146, 45)
-2026-02-14 16:50:48 - INFO - Test shape:  (120526, 44)
-2026-02-14 16:50:48 - INFO - 
-================================================================================
-2026-02-14 16:50:48 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 16:50:48 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 16:50:48 - INFO - ================================================================================
-2026-02-14 16:50:48 - INFO - Extracting features for Train...
-2026-02-14 16:50:50 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 245, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 187, in extract_advanced_features
-    le_s.fit(sorted(all_vals))
-             ^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 16:54:26 - INFO - ================================================================================
-2026-02-14 16:54:26 - INFO - 1. LOADING DATASETS
-2026-02-14 16:54:26 - INFO - ================================================================================
-2026-02-14 16:56:36 - INFO - Train shape: (296146, 45)
-2026-02-14 16:56:36 - INFO - Test shape:  (120526, 44)
-2026-02-14 16:56:36 - INFO - 
-================================================================================
-2026-02-14 16:56:36 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 16:56:36 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 16:56:36 - INFO - ================================================================================
-2026-02-14 16:56:36 - INFO - Extracting features for Train...
-2026-02-14 16:56:38 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 245, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 187, in extract_advanced_features
-    le_s.fit(sorted(all_vals))
-             ^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 16:56:43 - WARNING - Matplotlib is building the font cache; this may take a moment.
-2026-02-14 16:56:45 - INFO - generated new fontManager
-2026-02-14 16:59:50 - INFO - ================================================================================
-2026-02-14 16:59:50 - INFO - 1. LOADING DATASETS
-2026-02-14 16:59:50 - INFO - ================================================================================
-2026-02-14 17:02:10 - INFO - Train shape: (296146, 45)
-2026-02-14 17:02:10 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:02:10 - INFO - 
-================================================================================
-2026-02-14 17:02:10 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:02:10 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:02:10 - INFO - ================================================================================
-2026-02-14 17:02:10 - INFO - Extracting features for Train...
-2026-02-14 17:02:15 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 245, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 187, in extract_advanced_features
-    le_s.fit(sorted(all_vals))
-             ^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 17:04:36 - INFO - ================================================================================
-2026-02-14 17:04:36 - INFO - 1. LOADING DATASETS
-2026-02-14 17:04:36 - INFO - ================================================================================
-2026-02-14 17:06:50 - INFO - Train shape: (296146, 45)
-2026-02-14 17:06:50 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:06:50 - INFO - 
-================================================================================
-2026-02-14 17:06:50 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:06:50 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:06:50 - INFO - ================================================================================
-2026-02-14 17:06:50 - INFO - Extracting features for Train...
-2026-02-14 17:06:52 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 246, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 188, in extract_advanced_features
-    le_s.fit(sorted(list(all_vals)))
-             ^^^^^^^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 17:07:29 - INFO - ================================================================================
-2026-02-14 17:07:29 - INFO - 1. LOADING DATASETS
-2026-02-14 17:07:29 - INFO - ================================================================================
-2026-02-14 17:09:39 - INFO - Train shape: (296146, 45)
-2026-02-14 17:09:39 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:09:39 - INFO - 
-================================================================================
-2026-02-14 17:09:39 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:09:39 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:09:39 - INFO - ================================================================================
-2026-02-14 17:09:39 - INFO - Extracting features for Train...
-2026-02-14 17:09:41 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 246, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\advanced_benchmark.py", line 188, in extract_advanced_features
-    le_s.fit(sorted(list(all_vals)))
-             ^^^^^^^^^^^^^^^^^^^^^^
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 17:29:29 - INFO - ================================================================================
-2026-02-14 17:29:29 - INFO - 1. LOADING DATASETS
-2026-02-14 17:29:29 - INFO - ================================================================================
-2026-02-14 17:31:43 - INFO - Train shape: (296146, 45)
-2026-02-14 17:31:43 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:31:43 - INFO - 
-================================================================================
-2026-02-14 17:31:43 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:31:43 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:31:43 - INFO - ================================================================================
-2026-02-14 17:31:43 - INFO - Extracting features for Train...
-2026-02-14 17:32:16 - ERROR - Error occurred during Feature Engineering phase.
-Traceback (most recent call last):
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 262, in <module>
-    train_feat, fitted_encoders = extract_advanced_features(train_df)
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 192, in extract_advanced_features
-    all_statuses = np.unique(sv)
-                   ^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\numpy\lib\_arraysetops_impl.py", line 296, in unique
-    ret = _unique1d(ar, return_index, return_inverse, return_counts,
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\numpy\lib\_arraysetops_impl.py", line 385, in _unique1d
-    ar.sort()
-TypeError: '<' not supported between instances of 'float' and 'str'
-2026-02-14 17:39:02 - INFO - ================================================================================
-2026-02-14 17:39:02 - INFO - 1. LOADING DATASETS
-2026-02-14 17:39:02 - INFO - ================================================================================
-2026-02-14 17:41:15 - INFO - Train shape: (296146, 45)
-2026-02-14 17:41:15 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:41:15 - INFO - 
-================================================================================
-2026-02-14 17:41:15 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:41:15 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:41:15 - INFO - ================================================================================
-2026-02-14 17:41:15 - INFO - Extracting features for Train...
-2026-02-14 17:41:50 - INFO - Created 142 features for Train.
-2026-02-14 17:41:50 - INFO - Extracting features for Test...
-2026-02-14 17:42:03 - INFO - Cleaning inf/nan values using training means...
-2026-02-14 17:42:15 - INFO - Final X_train shape: (296146, 142)
-2026-02-14 17:42:15 - INFO - Running PCA Dimensionality Reduction...
-2026-02-14 17:42:17 - INFO - PCA retained 49 components for 95% variance.
-2026-02-14 17:42:18 - INFO - Computed custom class weights to handle severe class imbalance.
-2026-02-14 17:42:18 - INFO - 
-================================================================================
-2026-02-14 17:42:18 - INFO - 3. RUNNING MODEL BENCHMARK
-2026-02-14 17:42:18 - INFO - ================================================================================
-2026-02-14 17:42:18 - INFO - Initiating training for: KNN_5
-2026-02-14 17:56:21 - INFO - ================================================================================
-2026-02-14 17:56:21 - INFO - 1. LOADING DATASETS
-2026-02-14 17:56:21 - INFO - ================================================================================
-2026-02-14 17:58:36 - INFO - Train shape: (296146, 45)
-2026-02-14 17:58:36 - INFO - Test shape:  (120526, 44)
-2026-02-14 17:58:36 - INFO - 
-================================================================================
-2026-02-14 17:58:36 - INFO - 2. FEATURE ENGINEERING
-2026-02-14 17:58:36 - INFO - Motivation: Exploit ALL available information in the dataset.
-2026-02-14 17:58:36 - INFO - ================================================================================
-2026-02-14 17:58:36 - INFO - Extracting features for Train...
-2026-02-14 17:59:12 - INFO - Created 142 features for Train.
-2026-02-14 17:59:12 - INFO - Extracting features for Test...
-2026-02-14 17:59:27 - INFO - Cleaning inf/nan values using training means...
-2026-02-14 17:59:39 - INFO - Final X_train shape: (296146, 142)
-2026-02-14 17:59:39 - INFO - Running PCA Dimensionality Reduction...
-2026-02-14 17:59:42 - INFO - PCA retained 49 components for 95% variance.
-2026-02-14 17:59:42 - INFO - Computed custom class weights to handle severe class imbalance.
-2026-02-14 17:59:42 - INFO - 
-================================================================================
-2026-02-14 17:59:42 - INFO - 3. RUNNING MODEL BENCHMARK
-2026-02-14 17:59:42 - INFO - ================================================================================
-2026-02-14 17:59:42 - INFO - Initiating training for: RandomForest
-2026-02-14 18:34:59 - ERROR - FAILED to train RandomForest due to an unexpected error.
-joblib.externals.loky.process_executor._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\_utils.py", line 109, in __call__
-    return self.func(**kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 607, in __call__
-    return [func(*args, **kwargs) for func, args, kwargs in self.items]
-            ^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\utils\parallel.py", line 184, in __call__
-    return self.function(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\ensemble\_forest.py", line 188, in _parallel_build_trees
-    tree._fit(
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\tree\_classes.py", line 475, in _fit
-    builder.build(self.tree_, X, y, sample_weight, missing_values_in_feature_mask)
-  File "sklearn/tree/_tree.pyx", line 141, in sklearn.tree._tree.DepthFirstTreeBuilder.build
-  File "sklearn/tree/_tree.pyx", line 256, in sklearn.tree._tree.DepthFirstTreeBuilder.build
-  File "sklearn/tree/_tree.pyx", line 911, in sklearn.tree._tree.Tree._add_node
-  File "sklearn/tree/_tree.pyx", line 879, in sklearn.tree._tree.Tree._resize_c
-  File "sklearn/tree/_utils.pyx", line 30, in sklearn.tree._utils.safe_realloc
-MemoryError: could not allocate 4194304 bytes
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "d:\machine learning\tp ml\advanced_benchmark.py", line 384, in <module>
-    fold_model.fit(data[tr_idx], y_train[tr_idx])
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\base.py", line 1336, in wrapper
-    return fit_method(estimator, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\ensemble\_forest.py", line 486, in fit
-    trees = Parallel(
-            ^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\sklearn\utils\parallel.py", line 91, in __call__
-    return super().__call__(iterable_with_config_and_warning_filters)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 2072, in __call__
-    return output if self.return_generator else list(output)
-                                                ^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 1682, in _get_outputs
-    yield from self._retrieve()
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 1784, in _retrieve
-    self._raise_error_fast()
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 1859, in _raise_error_fast
-    error_job.get_result(self.timeout)
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 758, in get_result
-    return self._return_or_raise()
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\machine learning\tp ml\.venv\Lib\site-packages\joblib\parallel.py", line 773, in _return_or_raise
-    raise self._result
-MemoryError: could not allocate 4194304 bytes
-2026-02-14 18:35:01 - INFO - Initiating training for: LightGBM
-2026-02-14 18:58:18 - INFO - SUCCESS: LightGBM | OOF F1-Score (Macro) = 0.5315 | Total Time: 1396.7s
-2026-02-14 18:58:18 - INFO - 
---- Detailed Classification Report for LightGBM ---
+2026-02-15 14:49:46 - INFO - Initiating training for: XGBoost
+2026-02-15 14:55:44 - INFO - SUCCESS: XGBoost | OOF F1-Score (Macro) = 0.5160 | Total Time: 357.5s
+2026-02-15 14:55:44 - INFO - 
+--- Detailed Classification Report for XGBoost ---
                precision    recall  f1-score   support
 
-   Demolition       0.71      0.90      0.79     31509
-         Road       0.64      0.85      0.73     14305
-  Residential       0.83      0.74      0.78    148435
-   Commercial       0.68      0.70      0.69    100422
-   Industrial       0.19      0.21      0.19      1324
+   Demolition       0.75      0.83      0.79     31509
+         Road       0.81      0.72      0.76     14305
+  Residential       0.79      0.81      0.80    148435
+   Commercial       0.70      0.68      0.69    100422
+   Industrial       0.40      0.03      0.05      1324
 Mega Projects       0.00      0.00      0.00       151
 
-     accuracy                           0.75    296146
-    macro avg       0.51      0.57      0.53    296146
- weighted avg       0.75      0.75      0.75    296146
+     accuracy                           0.76    296146
+    macro avg       0.58      0.51      0.52    296146
+ weighted avg       0.76      0.76      0.76    296146
 
 ------------------------------------------------------------
-2026-02-14 18:58:18 - INFO - 
+2026-02-15 14:55:44 - INFO - Initiating training for: CatBoost
+2026-02-15 14:58:21 - INFO - SUCCESS: CatBoost | OOF F1-Score (Macro) = 0.4906 | Total Time: 156.8s
+2026-02-15 14:58:21 - INFO - 
+--- Detailed Classification Report for CatBoost ---
+               precision    recall  f1-score   support
+
+   Demolition       0.65      0.86      0.74     31509
+         Road       0.49      0.87      0.63     14305
+  Residential       0.82      0.69      0.75    148435
+   Commercial       0.65      0.61      0.63    100422
+   Industrial       0.08      0.51      0.14      1324
+Mega Projects       0.03      0.21      0.05       151
+
+     accuracy                           0.69    296146
+    macro avg       0.45      0.62      0.49    296146
+ weighted avg       0.73      0.69      0.70    296146
+
+------------------------------------------------------------
+2026-02-15 14:58:21 - INFO - Initiating training for: RandomForest
+2026-02-15 15:05:41 - INFO - SUCCESS: RandomForest | OOF F1-Score (Macro) = 0.4876 | Total Time: 440.6s
+2026-02-15 15:05:41 - INFO - 
+--- Detailed Classification Report for RandomForest ---
+               precision    recall  f1-score   support
+
+   Demolition       0.75      0.76      0.76     31509
+         Road       0.77      0.64      0.70     14305
+  Residential       0.78      0.81      0.79    148435
+   Commercial       0.68      0.66      0.67    100422
+   Industrial       0.26      0.00      0.01      1324
+Mega Projects       0.00      0.00      0.00       151
+
+     accuracy                           0.74    296146
+    macro avg       0.54      0.48      0.49    296146
+ weighted avg       0.74      0.74      0.74    296146
+
+------------------------------------------------------------
+2026-02-15 15:05:41 - INFO - 
 ================================================================================
-2026-02-14 18:58:18 - INFO - 4. BUILDING THE ENSEMBLE & GENERATING SUBMISSION
-2026-02-14 18:58:18 - INFO - ================================================================================
-2026-02-14 18:58:18 - INFO - Building ensemble using: ['LightGBM']
-2026-02-14 18:58:18 - INFO - Simple Average Ensemble | OOF F1-Score = 0.5315
-2026-02-14 18:58:43 - INFO - Meta-Learner (Stacking) | F1-Score = 0.5203
-2026-02-14 18:59:13 - INFO - 
+2026-02-15 15:05:41 - INFO - 4. BUILDING THE ENSEMBLE & GENERATING SUBMISSION
+2026-02-15 15:05:41 - INFO - ================================================================================
+2026-02-15 15:05:41 - INFO - Building ensemble using: ['LightGBM', 'XGBoost', 'CatBoost', 'RandomForest']
+2026-02-15 15:05:41 - INFO - Simple Average Ensemble | OOF F1-Score = 0.5350
+2026-02-15 15:07:35 - INFO - Meta-Learner (Stacking) | F1-Score = 0.5107
+2026-02-15 15:07:58 - INFO - SUCCESS! 'stacked_ensemble_submission.csv' is ready for Kaggle.
+2026-02-15 15:09:52 - INFO - 
 --- Detailed Classification Report (Stacking) ---
                precision    recall  f1-score   support
 
-   Demolition       0.72      0.90      0.80     31509
-         Road       0.65      0.84      0.74     14305
+   Demolition       0.73      0.87      0.79     31509
+         Road       0.61      0.85      0.71     14305
   Residential       0.84      0.72      0.78    148435
-   Commercial       0.69      0.62      0.65    100422
-   Industrial       0.09      0.46      0.16      1324
-Mega Projects       0.00      0.10      0.00       151
+   Commercial       0.69      0.63      0.66    100422
+   Industrial       0.06      0.57      0.11      1324
+Mega Projects       0.01      0.36      0.01       151
 
      accuracy                           0.71    296146
-    macro avg       0.50      0.61      0.52    296146
+    macro avg       0.49      0.67      0.51    296146
  weighted avg       0.76      0.71      0.73    296146
 
 ------------------------------------------------------------
-2026-02-14 18:59:13 - INFO - Benchmark execution finished. Check 'benchmark_execution.log' for details.
+2026-02-15 15:09:52 - INFO - Benchmark execution finished. Check 'benchmark_execution.log' for details.
